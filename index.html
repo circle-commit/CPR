@@ -6,16 +6,23 @@
     <title>Emergency CPR Guide</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; }
-        #status { font-size: 1.5rem; margin-bottom: 20px; color: #ff4d4d; font-weight: bold; }
-        #visual-guide { width: 200px; height: 200px; border-radius: 50%; background-color: #333; margin: 20px auto; border: 10px solid #555; transition: 0.1s; }
+        #status { font-size: 1.5rem; margin-bottom: 10px; color: #ff4d4d; font-weight: bold; }
+        
+        /* 숫자 표시 스타일 추가 */
+        #count-display { font-size: 5rem; font-weight: bold; color: #ffffff; margin: 10px 0; }
+        
+        #visual-guide { width: 180px; height: 180px; border-radius: 50%; background-color: #333; margin: 10px auto; border: 10px solid #555; transition: 0.1s; position: relative; }
         .active { background-color: #ff0000 !important; transform: scale(1.1); box-shadow: 0 0 30px #ff0000; }
-        button { padding: 20px 40px; font-size: 1.2rem; cursor: pointer; background: #ff4d4d; color: white; border: none; border-radius: 10px; font-weight: bold; }
+        
+        button { padding: 20px 40px; font-size: 1.2rem; cursor: pointer; background: #ff4d4d; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 20px; }
         .info { margin-top: 30px; font-size: 0.9rem; color: #ccc; line-height: 1.5; }
     </style>
 </head>
 <body>
     <h1>🚨 응급 CPR 가이드</h1>
-    <div id="status">박자에 맞춰 압박하세요!</div>
+    <div id="status">준비되었습니다.</div>
+    
+    <div id="count-display">0</div>
     
     <div id="visual-guide"></div>
     
@@ -30,77 +37,58 @@
     <script>
     let audioCtx;
     let isRunning = false;
-    let compressionCount = 0;
-
-    // 1. 페이지 로드 시점에 목소리 목록을 미리 로드 (브라우저 최적화)
     const synth = window.speechSynthesis;
+    const countDisplay = document.getElementById('count-display');
+    const statusDisplay = document.getElementById('status');
+
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     async function startCPR() {
         if (isRunning) return;
         isRunning = true;
         
-        // 2. 오디오 컨텍스트를 사용자 클릭 즉시 생성
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // 3. 브라우저의 소리 차단 해제를 위해 빈 음성 하나를 먼저 실행 (매우 중요)
-        const silentMsg = new SpeechSynthesisUtterance("");
-        synth.speak(silentMsg);
+        synth.cancel();
 
-        // 4. 최초 시작 멘트
-        await speak("흉부압박을 시작하십시오.");
-        
-        // 5. 루프 시작
-        runCPRCycle();
-    }
-
-    function runCPRCycle() {
-        const interval = (60 / 110) * 1000;
-
-        const timerId = setInterval(async () => {
-            compressionCount++;
+        while (isRunning) {
+            statusDisplay.innerText = "가슴 압박 중...";
+            await speak("흉부압박을 시작하십시오.");
             
-            playClick();
-            visualFlash();
-
-            if (compressionCount >= 30) {
-                clearInterval(timerId);
-                compressionCount = 0;
-
-                await speak("기도개방을 한 상태로 인공호흡을 시작하세요.");
+            const interval = (60 / 110) * 1000; 
+            for (let i = 1; i <= 30; i++) {
+                // 화면에 횟수 업데이트
+                countDisplay.innerText = i;
                 
-                // 인공호흡 2회 시간을 위해 3초 대기 후 재시작
-                setTimeout(() => {
-                    runCPRCycle();
-                }, 3000); 
+                playClick();
+                visualFlash();
+                await delay(interval);
             }
-        }, interval);
+
+            statusDisplay.innerText = "인공호흡 단계";
+            await speak("기도개방을 한 상태로 인공호흡을 시작하세요.");
+            
+            // 인공호흡 중에는 숫자를 잠시 멈추거나 0으로 표시
+            await delay(3000);
+            countDisplay.innerText = "0";
+        }
     }
 
     function speak(text) {
         return new Promise((resolve) => {
-            // 기존에 나오던 목소리가 있다면 취소 (엉킴 방지)
+            if (synth.paused) synth.resume();
             synth.cancel();
-
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'ko-KR';
-            msg.rate = 1.1; // 웅얼거리지 않게 속도 살짝 올림
-            
-            msg.onend = () => {
-                resolve();
-            };
-
-            // 에러 발생 시에도 루프가 멈추지 않도록 처리
-            msg.onerror = () => {
-                console.error("TTS 에러 발생");
-                resolve();
-            };
-
+            msg.rate = 1.2;
+            msg.onend = () => resolve();
+            msg.onerror = () => { synth.resume(); resolve(); };
             synth.speak(msg);
         });
     }
 
     function playClick() {
         if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';

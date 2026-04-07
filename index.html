@@ -1,3 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency CPR Guide</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; }
+        #status { font-size: 1.5rem; margin-bottom: 20px; color: #ff4d4d; font-weight: bold; }
+        #visual-guide { width: 200px; height: 200px; border-radius: 50%; background-color: #333; margin: 20px auto; border: 10px solid #555; transition: 0.1s; }
+        .active { background-color: #ff0000 !important; transform: scale(1.1); box-shadow: 0 0 30px #ff0000; }
+        button { padding: 20px 40px; font-size: 1.2rem; cursor: pointer; background: #ff4d4d; color: white; border: none; border-radius: 10px; font-weight: bold; }
+        .info { margin-top: 30px; font-size: 0.9rem; color: #ccc; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <h1>🚨 응급 CPR 가이드</h1>
+    <div id="status">박자에 맞춰 압박하세요!</div>
+    
+    <div id="visual-guide"></div>
+    
+    <button onclick="startCPR()">CPR 시작 (음성/박자)</button>
+
+    <div class="info">
+        <p>1. 119 신고 확인<br>
+        2. 가슴 중앙을 5~6cm 깊이로 압박<br>
+        3. 분당 100~120회 속도 유지</p>
+    </div>
+
 <script>
     let audioCtx;
     let isRunning = false;
@@ -71,3 +100,5 @@
         setTimeout(() => guide.classList.remove('active'), 100);
     }
 </script>
+</body>
+</html>

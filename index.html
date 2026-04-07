@@ -27,78 +27,53 @@
         3. 분당 100~120회 속도 유지</p>
     </div>
 
-<script>
-    let audioCtx;
-    let isRunning = false;
-    let compressionCount = 0; // 압박 횟수 카운트 변수 추가
+    <script>
+        let audioCtx;
+        let isRunning = false;
 
-    async function startCPR() {
-        if (isRunning) return;
-        isRunning = true;
-        
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // 1. 최초 시작 멘트
-        await speak("흉부압박을 시작하십시오.");
-        
-        // 2. 루프 시작
-        runCPRCycle();
-    }
-
-    function runCPRCycle() {
-        const interval = (60 / 110) * 1000; // 110 BPM 간격 (밀리초)
-
-        const timerId = setInterval(async () => {
-            compressionCount++;
+        function startCPR() {
+            if (isRunning) return;
+            isRunning = true;
             
-            // 소리와 시각 효과
-            playClick();
-            visualFlash();
+            // 오디오 컨텍스트 초기화 (사용자 상호작용 필요)
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 110 BPM 계산 (60초 / 110회 = 약 0.545초 간격)
+            const interval = 60 / 110;
 
-            // 30회가 되었을 때
-            if (compressionCount >= 30) {
-                clearInterval(timerId); // 잠시 박자 멈춤
-                compressionCount = 0; // 카운트 초기화
+            setInterval(() => {
+                playClick();
+                visualFlash();
+            }, interval * 1000);
 
-                // 안내 멘트
-                await speak("기도개방을 한 상태로 인공호흡을 시작하세요.");
-                
-                // 멘트 종료 후 다시 박자 시작 (인공호흡 시간 확보를 위해 약간의 딜레이 후 재시작 가능)
-                setTimeout(() => {
-                    runCPRCycle();
-                }, 1000); 
-            }
-        }, interval);
-    }
-
-    // TTS(음성 출력) 함수를 Promise로 감싸서 멘트가 끝날 때까지 기다릴 수 있게 함
-    function speak(text) {
-        return new Promise((resolve) => {
-            const msg = new SpeechSynthesisUtterance(text);
+            // 첫 안내 음성 (브라우저 TTS 사용)
+            const msg = new SpeechSynthesisUtterance("가슴 압박을 시작하세요. 박자에 맞춰서 강하고 빠르게 눌러주세요.");
             msg.lang = 'ko-KR';
-            msg.onend = resolve; // 음성이 끝나면 다음 단계로
             window.speechSynthesis.speak(msg);
-        });
-    }
+        }
 
-    function playClick() {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-    }
+        function playClick() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
 
-    function visualFlash() {
-        const guide = document.getElementById('visual-guide');
-        guide.classList.add('active');
-        setTimeout(() => guide.classList.remove('active'), 100);
-    }
-</script>
+            osc.type = 'sine'; // 부드러운 "삑" 소리
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 고음
+
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function visualFlash() {
+            const guide = document.getElementById('visual-guide');
+            guide.classList.add('active');
+            setTimeout(() => guide.classList.remove('active'), 100);
+        }
+    </script>
 </body>
 </html>

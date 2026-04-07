@@ -67,8 +67,9 @@
             statusDisplay.innerText = "인공호흡 단계";
             await speak("기도개방을 한 상태로 인공호흡을 시작하세요.");
             
+
             // 인공호흡 중에는 숫자를 잠시 멈추거나 0으로 표시
-            await delay(3000);
+            await delay(15000);
             countDisplay.innerText = "0";
         }
     }
